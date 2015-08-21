@@ -1,0 +1,6 @@
+require 'cyclopedio/mapping/service/pos_service'
+require 'cyclopedio/mapping/service/type_service'
+require 'cyclopedio/mapping/service/term_merger'
+require 'cyclopedio/mapping/service/category_mapping_service'
+require 'cyclopedio/mapping/service/genus_proximum_mapping_service'
+require 'cyclopedio/mapping/service/article_mapping_service'
