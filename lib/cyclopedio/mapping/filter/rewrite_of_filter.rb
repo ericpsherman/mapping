@@ -9,7 +9,7 @@ module Cyclopedio
 
         def initialize(options)
           super
-          @name_service = options[:name_service] || Service::CycNameService.new(self.cyc)
+          @name_service = options[:name_service] || Cyc::Service::NameService.new(self.cyc)
         end
 
         def apply(terms)
@@ -18,10 +18,21 @@ module Cyclopedio
             result = cyc.cyc_query(-> { '`(#$rewriteOf '+term.to_cyc(true)+' ?s)' }, :UniversalVocabularyMt) || []
             # sometimes rewriteOf is identical on both sides
             next if result[0] && term.to_ruby == result[0][0][1..-1]
-            rewrite_of = result.map { |e| @name_service.convert_ruby_term(@name_service.extract_term_name(e.first)) }
+            rewrite_of = result.map { |e| @name_service.convert_ruby_term(extract_term_name(e.first)) }
             denied_terms.concat(rewrite_of)
           end
           terms.reject { |t| denied_terms.include?(t) }
+        end
+
+        private
+        # Extracts term name from a result that might be either Lisp pair or Lisp
+        # list.
+        def extract_term_name(expression)
+          if expression[1] == "."
+            expression[2]
+          else
+            expression[1..-1]
+          end
         end
       end
     end

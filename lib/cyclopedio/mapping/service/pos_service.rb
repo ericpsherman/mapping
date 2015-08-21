@@ -4,7 +4,7 @@ module Cyclopedio
   module Mapping
     module Service
       class PosService
-        def initialize(name_service=CycNameService.new)
+        def initialize(name_service=Cyc::Service::NameService.new)
           @name_service = name_service
         end
 

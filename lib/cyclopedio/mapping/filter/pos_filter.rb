@@ -15,7 +15,7 @@ module Cyclopedio
         #   the terms.
         def initialize(options)
           super
-          @pos_service = options[:pos_service] ||  Service::PosService.new(Service::CycNameService.new(self.cyc))
+          @pos_service = options[:pos_service] ||  Service::PosService.new(Cyc::Service::NameService.new(self.cyc))
           assign_allowed(:poses,[:noun],ALLOWED_POSES)
         end
 
