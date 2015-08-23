@@ -1,4 +1,5 @@
 require 'set'
+require_relative '../candidate'
 
 module Cyclopedio
   module Mapping
@@ -56,9 +57,11 @@ module Cyclopedio
             end
           end
           if output_tuple.size > 2
-            unified = {}
-            output_tuple[2..-1].each_slice(4){|id,name,positive,total| unified[[id,name]] ||= [0,0]; unified[[id,name]][0] += positive; unified[[id,name]][1] += total }
-
+            unified = Hash.new{|h,e| h[e] = [0,0] }
+            output_tuple[2..-1].each_slice(4) do |id,name,positive,total|
+              unified[[id,name]][0] += positive
+              unified[[id,name]][1] += total
+            end
             @output << output_tuple[0..1] + unified.map{|(id,name),(positive,total)| [id,name,positive,total] }.flatten(1)
             @category_mapping[category_name] = unified.map{|(id,name),(positive,total)| Candidate.new(id,name,positive,total) }
           end

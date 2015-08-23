@@ -1,3 +1,7 @@
+require 'cycr'
+require 'ref'
+require_relative 'wikipedia_name_converter'
+
 module Cyclopedio
   module Mapping
     # Name mapper finds candidates for a given term name.
@@ -14,7 +18,7 @@ module Cyclopedio
       # * :return_all: - if set to true returns the result of the all
       #   methods that succeeded (true by default)
       def initialize(options={})
-        @name_service = options[:name_service] || Service::CycNameService.new
+        @name_service = options[:name_service] || Cyc::Service::NameService.new
         @cyc = options[:cyc] || @name_service.cyc
         @return_all = options.fetch(:return_all,true)
 
@@ -64,7 +68,7 @@ module Cyclopedio
       def find_label(name)
         cyc_term = @name_service.find_by_label(name)
         [cyc_term].compact
-      rescue Mapping::AmbiguousResult => ex
+      rescue Cyc::Service::AmbiguousResult => ex
         return ex.results
       rescue Cyc::CycError
         return []

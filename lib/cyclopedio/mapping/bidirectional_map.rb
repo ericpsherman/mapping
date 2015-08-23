@@ -1,3 +1,5 @@
+require 'set'
+
 module Cyclopedio
   module Mapping
     class BidirectionalMap

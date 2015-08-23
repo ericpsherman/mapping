@@ -1,4 +1,9 @@
 require 'ref'
+require 'cycr'
+require 'cyclopedio/syntax'
+require 'wiktionary/noun'
+require_relative 'name_mapper'
+require_relative 'candidate_set'
 
 module Cyclopedio
   module Mapping
@@ -6,50 +11,62 @@ module Cyclopedio
     # category or article. It uses sophisticated name resolution strategy as
     # well as filtering of candidates that are not likely to be mapped to a given
     # category or article.
-    class TermProvider
+    class CandidateGenerator
       def initialize(options={})
         @name_service = options[:name_service]
         @cyc = options[:cyc] || Cyc::Client.new(cache: true)
         @name_mapper = options[:name_mapper] || NameMapper.new(cyc: @cyc, name_service: @name_service)
-        @simplifier_factory = options[:simplifier_factory] || Syntax::Stanford::Simplifier
+        @simplifier_factory = options[:simplifier_factory] || Cyclopedio::Syntax::Stanford::Simplifier
         @candidate_set_factory = options[:candidate_set_factory] || CandidateSet
 
         @category_filters = options[:category_filters] || []
         @article_filters = options[:article_filters] || []
         @genus_filters = options[:genus_filters] || []
 
-        @category_cache = Ref::WeakKeyMap.new
-        @article_cache = Ref::WeakKeyMap.new
-        @concept_types_cache = Ref::WeakKeyMap.new
-        @term_cache = Ref::WeakKeyMap.new
+        @nouns = options[:nouns] || Wiktionary::Noun.new
+        @all_subtrees = options.fetch(:all_subtrees,false)
+        @category_exact_match = options.fetch(:category_exact_match,false)
+
+        @category_cache = Ref::WeakValueMap.new
+        @article_cache = Ref::WeakValueMap.new
+        @concept_types_cache = Ref::WeakValueMap.new
+        @term_cache = Ref::WeakValueMap.new
       end
 
       # Returns the candidate terms for the Wikipedia +category+.
       # The results is a CandidateSet.
       def category_candidates(category)
         return @category_cache[category] unless @category_cache[category].nil?
-        candidates = candidates_for_name(singularize_name(category.name, category.head), @category_filters)
-        if !candidates.empty?
-          candidate_set = create_candidate_set(category.name,candidates)
-        else
-          candidate_set = candidate_set_for_syntax_trees(category.head_trees,@category_filters)
+        # from whole name singularized
+        candidates = []
+        singularize_name(category.name, category.head).each do |name_singularized|
+          candidates.concat(candidates_for_name(name_singularized,@category_filters))
         end
-        if candidate_set.empty?
-          candidates = candidates_for_name(category.name, @category_filters)
-          candidate_set = create_candidate_set(category.name,candidates) unless candidates.empty?
-        end
+        candidate_set = create_candidate_set(category.name,candidates)
+        return @category_cache[category] = candidate_set if !candidate_set.empty? || @category_exact_match
+        # from simplified name
+        candidate_set = candidate_set_for_syntax_trees(category.head_trees,@category_filters)
+        return @category_cache[category] = candidate_set unless candidate_set.empty?
+        # from original whole name
+        candidates_set = candidates_set_for_name(category.name, @category_filters)
         @category_cache[category] = candidate_set
+      end
+
+      # Return the candidate terms for a given +pattern+ which is exemplified
+      # by the +representative+. The result is a CandidateSet.
+      def pattern_candidates(pattern,representative)
+        candidate_set_for_syntax_trees(representative.head_trees,@category_filters,pattern)
       end
 
       # Returns the candidate terms for the Wikipedia +article+.
       # The result is a CandidateSet.
       def article_candidates(article)
         return @article_cache[article] unless @article_cache[article].nil?
-        candidates = candidates_for_name(article.name, @article_filters)
-        if candidates.empty?
-          candidates = candidates_for_name(remove_parentheses(article.name), @article_filters)
+        candidate_set = candidate_set_for_name(article.name, @article_filters)
+        if candidate_set.empty?
+          candidate_set = candidate_set_for_name(remove_parentheses(article.name), @article_filters)
         end
-        @article_cache[article] = create_candidate_set(article.name,candidates)
+        @article_cache[article] = candidate_set
       end
 
       # Returns the candidates terms for the Wikipedia article genus proxima.
@@ -63,13 +80,13 @@ module Cyclopedio
       # parentheses.
       # The result is a CandidateSet.
       def parentheses_candidates(concept)
+        # TODO cache result for a given type
         type = type_in_parentheses(concept.name)
-        if type.empty?
-          candidates = []
-        else
-          candidates = candidates_for_name(type, @genus_filters)
+        candidate_set = create_candidate_set(type,[])
+        if !type.empty?
+          candidate_set = candidate_set_for_name(type, @genus_filters)
         end
-        create_candidate_set(type,candidates)
+        candidate_set
       end
 
       # Returns the term that exactly matches provided +cyc_id+. Returned as an
@@ -80,21 +97,39 @@ module Cyclopedio
       end
 
       private
-      # Return the candidates for the given syntax +trees+. The results are filtered
-      # using the +filters+.
-      def candidate_set_for_syntax_trees(trees, filters)
+      # Return candidate set for an entity +name+, with a given +head+ and apply
+      # provided +filters+.
+      def candidate_set_for_name(name,filters)
+        candidates = candidates_for_name(name,filters)
+        create_candidate_set(name,candidates)
+      end
+
+      # Return the candidates set for the given syntax +trees+. The results are filtered
+      # using the +filters+. If +pattern+ is given, it is used to filter out too
+    # simplified names based on the +trees+.
+      def candidate_set_for_syntax_trees(trees,filters,pattern=nil)
         candidate_set = @candidate_set_factory.new
         trees.each do |tree|
           names = @simplifier_factory.new(tree).simplify.to_a
+          if pattern
+            names.select! do |name|
+              # Pattern won't match too specific name, e.g.
+              # "X almumni" does not match /University alumni/
+              pattern =~ /#{name}/
+            end
+          end
           head_node = tree.find_head_noun
           next unless head_node
           head = head_node.content
           names.each do |name|
-            simplified_name = singularize_name(name, head)
-            candidates = candidates_for_name(simplified_name, filters)
+            simplified_names = singularize_name(name, head)
+            candidates = []
+            simplified_names.each do |simplified_name|
+              candidates.concat(candidates_for_name(simplified_name, filters))
+            end
             unless candidates.empty?
               candidate_set.add(name,candidates)
-              break
+              break unless @all_subtrees
             end
           end
         end
@@ -110,17 +145,17 @@ module Cyclopedio
         end
       end
 
-      # Should be moved elswhere.
+      # Singularize using Wiktionary data. The result is an array of Strings.
       def singularize_name(name, head)
-        if head.respond_to?(:singularize)
-          singularized_head = head.singularize
-          if singularized_head.size==0
-            singularized_head=head
+        names = []
+        singularized_heads = @nouns.singularize(head)
+        if singularized_heads
+          singularized_heads.each do |singularized_head|
+            names << name.sub(/\b#{Regexp.quote(head)}\b/, singularized_head)
           end
-          name.sub(/\b#{Regexp.quote(head)}\b/, singularized_head)
-        else
-          name
         end
+        names << name if names.empty?
+        names
       end
 
       def remove_parentheses(name)

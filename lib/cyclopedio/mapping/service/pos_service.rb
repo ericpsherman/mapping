@@ -1,4 +1,5 @@
 require 'active_model/naming'
+require 'cycr'
 
 module Cyclopedio
   module Mapping

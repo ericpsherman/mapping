@@ -1,4 +1,5 @@
 require_relative 'cyc_filter'
+require_relative '../service/pos_service'
 
 module Cyclopedio
   module Mapping

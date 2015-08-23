@@ -1,4 +1,5 @@
 require 'concurrent'
+require 'cyclopedio/wiki'
 
 module Cyclopedio
   module Mapping
@@ -19,19 +20,19 @@ module Cyclopedio
         from_eponymous = category.eponymous_concepts.map do |concept|
           concept.categories.to_a
         end.flatten
-        (remote_counterparts(category,:parents,Rlp::Wiki::Category) + category.parents.to_a + from_eponymous).
+        (remote_counterparts(category,:parents,Cyclopedio::Wiki::Category) + category.parents.to_a + from_eponymous).
           select{|c| c.regular? && c.plural? }
       end
 
       # Children of the category accodring to wide context.
       def children_for(category)
-        (remote_counterparts(category,:children,Rlp::Wiki::Category) + category.children.to_a).
+        (remote_counterparts(category,:children,Cyclopedio::Wiki::Category) + category.children.to_a).
           select{|c| c.regular? && c.plural? }
       end
 
       # Articles of the category accodring to wide context.
       def articles_for(category)
-        (remote_counterparts(category,:concepts,Rlp::Wiki::Concept) + category.concepts.to_a)
+        (remote_counterparts(category,:concepts,Cyclopedio::Wiki::Concept) + category.concepts.to_a)
       end
 
       # Categories of the concept according to wide context.
@@ -39,7 +40,7 @@ module Cyclopedio
         from_eponymous = concept.eponymous_categories.map do |category|
           category.parents.to_a
         end.flatten
-        (remote_counterparts(concept,:categories,Rlp::Wiki::Category) + concept.categories.to_a + from_eponymous).
+        (remote_counterparts(concept,:categories,Cyclopedio::Wiki::Category) + concept.categories.to_a + from_eponymous).
           select{|c| c.regular? && c.plural? }
       end
 

@@ -6,8 +6,8 @@ require_relative '../test_helper'
 
 module Cyclopedio
   module Mapping
-    describe TermProvider do
-      subject             { TermProvider.new(cyc: cyc, name_service: name_service, name_mapper: name_mapper) }
+    describe CandidateGenerator do
+      subject             { CandidateGenerator.new(cyc: cyc, name_service: name_service, name_mapper: name_mapper) }
       let(:name_service)  { Cyc::Service::NameService.new(cyc) }
       let(:category)      { stub(category=Object.new).head_trees { head_trees }
                             stub(category).head { head }

@@ -1,3 +1,5 @@
+require 'cycr'
+
 module Cyclopedio
   module Mapping
     module Filter

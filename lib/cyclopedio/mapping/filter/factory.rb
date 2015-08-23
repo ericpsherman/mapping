@@ -42,6 +42,8 @@ module Cyclopedio
               result << function_filter
             when "b"
               result << black_list_filter(@black_list)
+            when "d"
+              result << ill_defined_filter(@cyc)
             end
             result
           end
@@ -70,6 +72,10 @@ module Cyclopedio
 
         def rewrite_of_filter(cyc)
           RewriteOfFilter.new(cyc: cyc)
+        end
+
+        def ill_defined_filter(cyc)
+          IllDefinedFilter.new(cyc: cyc)
         end
 
         def function_filter
