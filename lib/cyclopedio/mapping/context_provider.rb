@@ -6,66 +6,48 @@ module Cyclopedio
     class ContextProvider
       MAX_COLLECTION_SIZE = 1000
       # Options:
-      # * +rlp_services+ - services used to talk to remote RLP DBs.
+      # * +remote_services+ - services used to talk to remote Wiki DBs.
       # * +pool_size+ - thread pool size
+      # * +language+ - the language of the source page
+      # * +distance+ - the distance of the context
       def initialize(options={})
-        @rlp_services = options.fetch(:rlp_services)
+        @remote_services = options.fetch(:remote_services)
         pool_size = options.fetch(:pool_size,3)
         @pool = Concurrent::FixedThreadPool.new(pool_size)
+        @context_factory = options[:context_factory] || Context
         @timeout = 15
+        @language = options[:language] || "en"
+        @distance = options[:distance] || 1
       end
 
-      # Parents of the category accodring to wide context.
-      def parents_for(category)
-        from_eponymous = category.eponymous_articles.map do |concept|
-          concept.categories.to_a
-        end.flatten
-        (remote_counterparts(category,:parents,Cyclopedio::Wiki::Category) + category.parents.to_a + from_eponymous).
-          select{|c| c.regular? && c.plural? }
+      # Returns the context object of the +entity+ used to fetch its relatives.
+      def context(entity)
+        @context_factory.new(entity,@distance,self)
       end
 
-      # Children of the category accodring to wide context.
-      def children_for(category)
-        (remote_counterparts(category,:children,Cyclopedio::Wiki::Category) + category.children.to_a).
-          select{|c| c.regular? && c.plural? }
-      end
-
-      # Articles of the category accodring to wide context.
-      def articles_for(category)
-        (remote_counterparts(category,:articles,Cyclopedio::Wiki::Article) + category.articles.to_a)
-      end
-
-      # Categories of the concept according to wide context.
-      def categories_for(concept)
-        from_eponymous = concept.eponymous_categories.map do |category|
-          category.parents.to_a
-        end.flatten
-        (remote_counterparts(concept,:categories,Cyclopedio::Wiki::Category) + concept.categories.to_a + from_eponymous).
-          select{|c| c.regular? && c.plural? }
-      end
-
-      private
-      def remote_counterparts(page,relation,related_class)
+      # Returns remote relatives (of class +related_class+ and of +relationship+ type) of the +page+.
+      def relatives(page,relationship,related_class)
         translated_proxies(page,finder_name(page)).map do |proxy|
           Concurrent::Future.execute(executor: @pool) do
-            if proxy.send(relation).size > MAX_COLLECTION_SIZE
-              elements = proxy.send(relation)[0..MAX_COLLECTION_SIZE]
+            if proxy.public_send(relationship).size > MAX_COLLECTION_SIZE
+              elements = proxy.public_send(relationship)[0..MAX_COLLECTION_SIZE]
             else
-              elements = proxy.send(relation)
+              elements = proxy.public_send(relationship)
             end
             elements.map do |related_proxy|
-              related_proxy.translations.find{|t| t.language == "en" }
+              related_proxy.translations.find{|t| t.language == @language }
             end.compact.map{|t| remove_scope(t.value) }.map{|t| related_class.find_by_name(t) }.compact
           end
         end.map{|f| f.value(@timeout) }.compact.flatten
       end
 
+      private
       def translated_proxies(page,finder_name)
         @rlp_services.map do |language,service|
           translation = translation(page,language)
           next if translation.nil?
           Concurrent::Future.execute(executor: @pool) do
-            service.send("find_#{finder_name}_by_name",remove_scope(translation))
+            service.public_send("find_#{finder_name}_by_name",remove_scope(translation))
           end
         end.compact.map do |future|
           future.value(@timeout)
@@ -88,4 +70,3 @@ module Cyclopedio
     end
   end
 end
-
