@@ -1,5 +1,6 @@
 require 'cyclopedio/mapping/bidirectional_map'
 require 'cyclopedio/mapping/candidate'
+require 'cyclopedio/mapping/context'
 require 'cyclopedio/mapping/context_provider'
 require 'cyclopedio/mapping/name_mapper'
 require 'cyclopedio/mapping/candidate_generator'
