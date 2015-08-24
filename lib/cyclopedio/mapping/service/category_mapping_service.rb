@@ -5,26 +5,12 @@ module Cyclopedio
     module Service
       class CategoryMappingService < MappingService
 
-        # The options that have to be provided to the category mapping service:
-        # * :candidate_generator: - service used to provide candidate terms for
-        #   categories and articles
-        # * :context_provider: - service used to provide context for the mapped
-        #   category
-        # * :cyc: - Cyc client
+        # Category specific options:
         # * :multiplier: - service used to find most specific generalizations for
-        #   categories with multiple heads
-        # Optional:
-        # * :verbose: - if set to true, diagnostic messages will be send to the
-        #   reporter
-        # * :reporter: - service used to print the messages
+        #   categories with multiple heads.
         def initialize(options)
-          @candidate_generator = options[:candidate_generator]
-          @context_provider = options[:context_provider]
-          @cyc = options[:cyc]
+          super(options)
           @multiplier = options[:multiplier]
-          @verbose = options[:verbose]
-          @talkative = options[:talkative]
-          @reporter = options[:reporter] || Reporter.new
         end
 
         # Returns a row with the category name, the names that were used to find
@@ -44,31 +30,19 @@ module Cyclopedio
           if candidates && !candidates.empty?
             # related candidate sets
             context = @context_provider.context(category)
-            parent_candidate_sets = related_category_candidates(context.parents.uniq)
-            child_candidate_sets = related_category_candidates(context.children.uniq)
-            articles = context.articles.uniq
+            parent_candidate_sets = related_category_candidates(context.parents.values.flatten(1).uniq)
+            child_candidate_sets = related_category_candidates(context.children.values.flatten(1).uniq)
+            articles = context.articles.values.flatten(1).uniq
             instance_candidate_sets = related_article_candidates(articles)
             type_candidate_sets = related_type_candidates(articles)
             # matched relations computation
             candidates.each do |term|
               counts = []
-              counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.genls?(t,c) })
-              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.genls?(c,t) })
-              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.with_any_mt{|cyc| cyc.isa?(c,t) } })
-              # Alcohol case
-              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE"){|t,c| @cyc.genls?(t,c) || @cyc.genls?(c,t) ||
-                            @cyc.isa?(t,c) || @cyc.isa?(c,t) })
-              positive = counts.map.with_index{|e,i| e if i % 2 == 0 }.compact.inject(0){|e,s| e + s }
-              negative = counts.map.with_index{|e,i| e if i % 2 != 0 }.compact.inject(0){|e,s| e + s }
-              report do |reporter|
-                if positive > 0
-                  count_string = "  %-20s p:%i/%i,c:%i/%i,i:%i/%i,t:%i/%i -> %i/%i/%.1f" %
-                    [term.to_ruby,*counts,positive,positive+negative,(positive/(positive+negative).to_f*100)]
-                  reporter.call(count_string.hl(:green))
-                else
-                  reporter.call("  #{term.to_ruby}".hl(:red))
-                end
-              end
+              counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name,[:genls?])
+              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?])
+              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?])
+              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE"),[:genls?,:spec?,:isa?,:type?])
+              sum_counts(counts,%w{p c i t})
               row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end

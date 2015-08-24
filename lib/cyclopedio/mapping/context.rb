@@ -82,7 +82,7 @@ module Cyclopedio
       # Add relatives of type +relationship+ from +min_distance+ up to +max_distance+ from the
       # entity.
       def add_relatives(relatives,min_distance,max_distance,relationship)
-        min_distancen.upto(max_distance) do |distance|
+        min_distance.upto(max_distance) do |distance|
           next if relatives.include?(distance)
           relatives[distance-1].each do |relative|
             regular = relative.public_send(relationship).to_a

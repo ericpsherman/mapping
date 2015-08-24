@@ -5,26 +5,13 @@ module Cyclopedio
     module Service
       class PatternMappingService < MappingService
 
-        # The options that have to be provided to the category mapping service:
-        # * :candidate_generator: - service used to provide candidate terms for
-        #   categories and articles
-        # * :context_provider: - service used to provide context for the mapped
-        #   category
-        # * :cyc: - Cyc client
+        # Options:
         # * :multiplier: - service used to find most specific generalizations for
         #   categories with multiple heads
-        # Optional:
-        # * :verbose: - if set to true, diagnostic messages will be send to the
-        #   reporter
-        # * :reporter: - service used to print the messages
+        # * :sample_size: - the number of categories matching the pattern used
+        #   to compute the disambiguation support.
         def initialize(options)
-          @candidate_generator = options[:candidate_generator]
-          @context_provider = options[:context_provider]
-          @cyc = options[:cyc]
           @multiplier = options[:multiplier]
-          @verbose = options[:verbose]
-          @talkative = options[:talkative]
-          @reporter = options[:reporter] || Reporter.new
           @sample_size = options[:sample_size]
         end
 
@@ -51,11 +38,12 @@ module Cyclopedio
             parents = Set.new
             children = Set.new
             articles = Set.new
+            context = @context_provider.context(category)
             category_ids.sample(@sample_size).each do |category_wiki_id|
               category = Category.find_by_wiki_id(category_wiki_id)
-              parents.merge(@context_provider.parents_for(category))
-              children.merge(@context_provider.children_for(category))
-              articles.merge(@context_provider.articles_for(category))
+              parents.merge(context.parents.values.flatten(1))
+              children.merge(context.children.values.flatten(1))
+              articles.merge(context.articles.values.flatten(1))
             end
             parent_candidate_sets = related_category_candidates(parents.to_a)
             child_candidate_sets = related_category_candidates(children.to_a)
@@ -64,23 +52,11 @@ module Cyclopedio
             # matched relations computation
             candidates.each do |term|
               counts = []
-              counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.genls?(t,c) })
-              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.genls?(c,t) })
-              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name){|t,c| @cyc.with_any_mt{|cyc| cyc.isa?(c,t) } })
-              # Alcohol case
-              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE"){|t,c| @cyc.genls?(t,c) || @cyc.genls?(c,t) ||
-                            @cyc.isa?(t,c) || @cyc.isa?(c,t) })
-              positive = counts.map.with_index{|e,i| e if i % 2 == 0 }.compact.inject(0){|e,s| e + s }
-              negative = counts.map.with_index{|e,i| e if i % 2 != 0 }.compact.inject(0){|e,s| e + s }
-              report do |reporter|
-                if positive > 0
-                  count_string = "  %-20s p:%i/%i,c:%i/%i,i:%i/%i,t:%i/%i -> %i/%i/%.1f" %
-                    [term.to_ruby,*counts,positive,positive+negative,(positive/(positive+negative).to_f*100)]
-                  reporter.call(count_string.hl(:green))
-                else
-                  reporter.call("  #{term.to_ruby}".hl(:red))
-                end
-              end
+              counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name,[:genls?]){|t,c| @cyc.genls?(t,c) })
+              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?])
+              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?])
+              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE",[:genls?,:spec?,:isa?,:type?]])
+              sum_counts(counts,%w{p c i t})
               row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end
