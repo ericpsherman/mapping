@@ -43,9 +43,10 @@ module Cyclopedio
           end
           if candidates && !candidates.empty?
             # related candidate sets
-            parent_candidate_sets = related_category_candidates(@context_provider.parents_for(category).uniq)
-            child_candidate_sets = related_category_candidates(@context_provider.children_for(category).uniq)
-            articles = @context_provider.articles_for(category).uniq
+            context = @context_provider.context(category)
+            parent_candidate_sets = related_category_candidates(context.parents.uniq)
+            child_candidate_sets = related_category_candidates(context.children.uniq)
+            articles = context.articles.uniq
             instance_candidate_sets = related_article_candidates(articles)
             type_candidate_sets = related_type_candidates(articles)
             # matched relations computation
