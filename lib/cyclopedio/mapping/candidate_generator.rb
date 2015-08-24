@@ -49,7 +49,7 @@ module Cyclopedio
         candidate_set = candidate_set_for_syntax_trees(category_head_trees(category),@category_filters)
         return @category_cache[category] = candidate_set unless candidate_set.empty?
         # from original whole name
-        candidates_set = candidates_set_for_name(category.name, @category_filters)
+        candidate_set = candidate_set_for_name(category.name, @category_filters)
         @category_cache[category] = candidate_set
       end
 
