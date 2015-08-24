@@ -33,7 +33,7 @@ module Cyclopedio
       # at the category page. If +max_distance+ is not provided,
       # default distance defined for this context is used.
       def children(max_distance=@default_distance)
-        @children[0] = @entity if @children[0].nil?
+        @children[0] = [@entity] if @children[0].empty?
         add_relatives(@children,1,max_distance,:children)
         @children
       end
@@ -57,7 +57,7 @@ module Cyclopedio
       # Returns parents of the entity which has to be a Wikipedia category, up
       # to +max_distance+.
       def category_parents(max_distance)
-        @parents[0] = @entity if @parents[0].nil?
+        @parents[0] = [@entity] if @parents[0].empty?
         add_relatives(@parents,1,max_distance,:parents){|r| r.eponymous_articles.flat_map{|a| a.categories.to_a } }
         @parents
       end
