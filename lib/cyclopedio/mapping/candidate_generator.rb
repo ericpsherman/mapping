@@ -17,6 +17,7 @@ module Cyclopedio
         @cyc = options[:cyc] || Cyc::Client.new(cache: true)
         @name_mapper = options[:name_mapper] || NameMapper.new(cyc: @cyc, name_service: @name_service)
         @simplifier_factory = options[:simplifier_factory] || Cyclopedio::Syntax::Stanford::Simplifier
+        @parse_tree_factory = options[:parse_tree_factory] || Cyclopedio::Syntax::Stanford::Converter
         @candidate_set_factory = options[:candidate_set_factory] || CandidateSet
 
         @category_filters = options[:category_filters] || []
@@ -39,13 +40,13 @@ module Cyclopedio
         return @category_cache[category] unless @category_cache[category].nil?
         # from whole name singularized
         candidates = []
-        singularize_name(category.name, category.head).each do |name_singularized|
+        singularize_name(category.name, category_head(category).each do |name_singularized|
           candidates.concat(candidates_for_name(name_singularized,@category_filters))
         end
         candidate_set = create_candidate_set(category.name,candidates)
         return @category_cache[category] = candidate_set if !candidate_set.empty? || @category_exact_match
         # from simplified name
-        candidate_set = candidate_set_for_syntax_trees(category.head_trees,@category_filters)
+        candidate_set = candidate_set_for_syntax_trees(category_head_trees(category),@category_filters)
         return @category_cache[category] = candidate_set unless candidate_set.empty?
         # from original whole name
         candidates_set = candidates_set_for_name(category.name, @category_filters)
@@ -55,7 +56,7 @@ module Cyclopedio
       # Return the candidate terms for a given +pattern+ which is exemplified
       # by the +representative+. The result is a CandidateSet.
       def pattern_candidates(pattern,representative)
-        candidate_set_for_syntax_trees(representative.head_trees,@category_filters,pattern)
+        candidate_set_for_syntax_trees(representative_head_trees(representative),@category_filters,pattern)
       end
 
       # Returns the candidate terms for the Wikipedia +article+.
@@ -97,6 +98,35 @@ module Cyclopedio
       end
 
       private
+      # XXX most of these methods should be moved to external class(es).
+
+      # Returns the first parse tree of the +category+ name.
+      def category_head_tree(category)
+        convert_head_into_object(category.parsed_head)
+      end
+
+      # Returns the word (string) being a head of the +category+ name.
+      def category_head(category)
+        head_node = category_head_tree(category).find_head_noun
+        head_node && head_node.content
+      end
+
+      # Returns a list of parse trees of the +category+ name.
+      # The might be more parse trees for categories such as "Cities and
+      # villages in X", etc.
+      def category_head_trees(category)
+        if category.multiple_heads?
+          category.parsed_heads.map{|h| convert_head_into_object(h) }
+        else
+          [category_head_tree(category)]
+        end
+      end
+
+      # Converts the string representing the parsed +head+ into tree of objects.
+      def convert_head_into_object(head)
+        @parse_tree_factory.new(head).object_tree
+      end
+
       # Return candidate set for an entity +name+, with a given +head+ and apply
       # provided +filters+.
       def candidate_set_for_name(name,filters)
