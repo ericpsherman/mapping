@@ -96,7 +96,7 @@ module Cyclopedio
         end
 
         #Counts positive and negative signals.
-        def sum_counts(counts,labels)
+        def sum_counts(term,counts,labels)
           positive = counts.map.with_index { |e, i| e if i % 2 == 0 }.compact.inject(0) { |e, s| e + s }
           negative = counts.map.with_index { |e, i| e if i % 2 != 0 }.compact.inject(0) { |e, s| e + s }
           report do |reporter|

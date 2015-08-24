@@ -17,11 +17,11 @@ module Cyclopedio
             type_candidates = related_type_candidates([article])
             parentheses_candidates = [@candidate_generator.parentheses_candidates(article)]
             counts = []
-            counts.concat(number_of_matched_candidates(parent_candidates,term,article.name,[:isa?,:genls?])
-            counts.concat(number_of_matched_candidates(genus_candidates,term,genus_candidates.first.full_name,[:isa?,:genls?])
-            counts.concat(number_of_matched_candidates(type_candidates,term,"DBPEDIA_TYPE",[:genls?,:spec?])
-            counts.concat(number_of_matched_candidates(parentheses_candidates,term,parentheses_candidates.first.full_name,[:isa?,:genls?])
-            sum_counts(counts,%w{p g t r})
+            counts.concat(number_of_matched_candidates(parent_candidates,term,article.name,[:isa?,:genls?]))
+            counts.concat(number_of_matched_candidates(genus_candidates,term,genus_candidates.first.full_name,[:isa?,:genls?]))
+            counts.concat(number_of_matched_candidates(type_candidates,term,"DBPEDIA_TYPE",[:genls?,:spec?]))
+            counts.concat(number_of_matched_candidates(parentheses_candidates,term,parentheses_candidates.first.full_name,[:isa?,:genls?]))
+            positive,negative = sum_counts(term,counts,%w{p g t r})
           end
           result
         end

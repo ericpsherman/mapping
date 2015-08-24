@@ -22,10 +22,10 @@ module Cyclopedio
             parentheses_candidates = [@candidate_generator.parentheses_candidates(article)]
             candidates.each do |term|
               counts = []
-              counts.concat(number_of_matched_candidates(parent_candidates,term,name,[:genls?,:spec?])
-              counts.concat(number_of_matched_candidates(type_candidates,term,"DBPEDIA_TYPE",[:genls?,:spec?])
-              counts.concat(number_of_matched_candidates(parentheses_candidates,term,parentheses_candidates.first.full_name,[:genls?,:spec?])
-              sum_counts(counts,%w{p t r})
+              counts.concat(number_of_matched_candidates(parent_candidates,term,name,[:genls?,:spec?]))
+              counts.concat(number_of_matched_candidates(type_candidates,term,"DBPEDIA_TYPE",[:genls?,:spec?]))
+              counts.concat(number_of_matched_candidates(parentheses_candidates,term,parentheses_candidates.first.full_name,[:genls?,:spec?]))
+              positive,negative = sum_counts(term,counts,%w{p t r})
               result.concat([term.id,term.to_ruby.to_s,positive,positive+negative])
             end
           end
