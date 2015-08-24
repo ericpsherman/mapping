@@ -40,7 +40,7 @@ module Cyclopedio
         return @category_cache[category] unless @category_cache[category].nil?
         # from whole name singularized
         candidates = []
-        singularize_name(category.name, category_head(category).each do |name_singularized|
+        singularize_name(category.name, category_head(category)).each do |name_singularized|
           candidates.concat(candidates_for_name(name_singularized,@category_filters))
         end
         candidate_set = create_candidate_set(category.name,candidates)

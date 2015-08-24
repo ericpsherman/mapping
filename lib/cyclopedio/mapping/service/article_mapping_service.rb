@@ -5,7 +5,7 @@ module Cyclopedio
     module Service
       class ArticleMappingService < MappingService
         # The options that have to be provided to the category mapping service:
-        # * :term_provider: - service used to provide candidate terms for
+        # * :candidate_generator: - service used to provide candidate terms for
         #   categories and articles
         # * :context_provider: - service used to provide context for the mapped
         #   category
@@ -15,7 +15,7 @@ module Cyclopedio
         #   reporter
         # * :reporter: - service used to print the messages
         def initialize(options)
-          @term_provider = options[:term_provider]
+          @candidate_generator = options[:candidate_generator]
           @context_provider = options[:context_provider]
           @cyc = options[:cyc]
           @verbose = options[:verbose]
@@ -26,15 +26,15 @@ module Cyclopedio
         # Returns a row with the article name supplemented with values of contextual
         # support for a given article - term mapping.
         def candidates_for_article(article)
-          candidate_set = @term_provider.article_candidates(article)
+          candidate_set = @candidate_generator.article_candidates(article)
           result = [article.name]
           report(article.name.hl(:blue))
           return result if candidate_set.empty?
           candidate_set.candidates.each do |term|
             parent_candidates = related_category_candidates(@context_provider.categories_for(article).uniq)
-            genus_candidates = [@term_provider.genus_proximum_candidates(article)]
+            genus_candidates = [@candidate_generator.genus_proximum_candidates(article)]
             type_candidates = related_type_candidates([article])
-            parentheses_candidates = [@term_provider.parentheses_candidates(article)]
+            parentheses_candidates = [@candidate_generator.parentheses_candidates(article)]
             counts = []
             counts.concat(number_of_matched_candidates(parent_candidates,term,article.name){|t,c| @cyc.with_any_mt{|cyc| cyc.isa?(t,c) } || @cyc.genls?(t,c) })
             counts.concat(number_of_matched_candidates(genus_candidates,term,genus_candidates.first.full_name){|t,c| @cyc.with_any_mt{|cyc| cyc.isa?(t,c) } || @cyc.genls?(t,c) })

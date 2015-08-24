@@ -5,7 +5,7 @@ module Cyclopedio
     module Service
       class GenusProximumMappingService < MappingService
         # The options that have to be provided to the category mapping service:
-        # * :term_provider: - service used to provide candidate terms for
+        # * :candidate_generator: - service used to provide candidate terms for
         #   categories and articles
         # * :context_provider: - service used to provide context for the mapped
         #   category
@@ -15,7 +15,7 @@ module Cyclopedio
         #   reporter
         # * :reporter: - service used to print the messages
         def initialize(options)
-          @term_provider = options[:term_provider]
+          @candidate_generator = options[:candidate_generator]
           @context_provider = options[:context_provider]
           @cyc = options[:cyc]
           @verbose = options[:verbose]
@@ -27,7 +27,7 @@ module Cyclopedio
         # the candidates and Cyc candidates supplemented with values of contextual
         # support for a given article - type mapping.
         def candidates_for_article(article)
-          candidate_set = @term_provider.genus_proximum_candidates(article)
+          candidate_set = @candidate_generator.genus_proximum_candidates(article)
           result = [article.name]
           report(article.name.hl(:blue))
           return result if candidate_set.empty?
@@ -38,7 +38,7 @@ module Cyclopedio
             next if candidates.empty?
             parent_candidates = related_category_candidates(@context_provider.categories_for(article).uniq)
             type_candidates = related_type_candidates([article])
-            parentheses_candidates = [@term_provider.parentheses_candidates(article)]
+            parentheses_candidates = [@candidate_generator.parentheses_candidates(article)]
             candidates.each do |term|
               counts = []
               counts.concat(number_of_matched_candidates(parent_candidates,term,name){|t,c| @cyc.genls?(t,c) || @cyc.genls?(c, t) })

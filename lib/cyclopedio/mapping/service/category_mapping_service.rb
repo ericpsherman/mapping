@@ -6,7 +6,7 @@ module Cyclopedio
       class CategoryMappingService < MappingService
 
         # The options that have to be provided to the category mapping service:
-        # * :term_provider: - service used to provide candidate terms for
+        # * :candidate_generator: - service used to provide candidate terms for
         #   categories and articles
         # * :context_provider: - service used to provide context for the mapped
         #   category
@@ -18,7 +18,7 @@ module Cyclopedio
         #   reporter
         # * :reporter: - service used to print the messages
         def initialize(options)
-          @term_provider = options[:term_provider]
+          @candidate_generator = options[:candidate_generator]
           @context_provider = options[:context_provider]
           @cyc = options[:cyc]
           @multiplier = options[:multiplier]
@@ -31,7 +31,7 @@ module Cyclopedio
         # the candidates and Cyc candidates supplemented with values of contextual
         # support for a given category - term mapping.
         def candidates_for_category(category)
-          candidate_set = @term_provider.category_candidates(category)
+          candidate_set = @candidate_generator.category_candidates(category)
           row = [category.name,candidate_set.full_name]
           report(category.name.hl(:blue))
           if candidate_set.size > 1

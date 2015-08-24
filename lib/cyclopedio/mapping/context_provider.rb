@@ -17,7 +17,7 @@ module Cyclopedio
 
       # Parents of the category accodring to wide context.
       def parents_for(category)
-        from_eponymous = category.eponymous_concepts.map do |concept|
+        from_eponymous = category.eponymous_articles.map do |concept|
           concept.categories.to_a
         end.flatten
         (remote_counterparts(category,:parents,Cyclopedio::Wiki::Category) + category.parents.to_a + from_eponymous).
@@ -32,7 +32,7 @@ module Cyclopedio
 
       # Articles of the category accodring to wide context.
       def articles_for(category)
-        (remote_counterparts(category,:concepts,Cyclopedio::Wiki::Concept) + category.concepts.to_a)
+        (remote_counterparts(category,:articles,Cyclopedio::Wiki::Article) + category.articles.to_a)
       end
 
       # Categories of the concept according to wide context.
