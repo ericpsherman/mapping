@@ -35,6 +35,7 @@ module Cyclopedio
             articles = context.articles.values.flatten(1).uniq
             instance_candidate_sets = related_article_candidates(articles)
             type_candidate_sets = related_type_candidates(articles)
+            infobox_candidate_sets = related_infobox_candidates(articles)
             # matched relations computation
             candidates.each do |term|
               counts = []
@@ -42,7 +43,8 @@ module Cyclopedio
               counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?])
               counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?])
               counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE"),[:genls?,:spec?,:isa?,:type?])
-              sum_counts(counts,%w{p c i t})
+              counts.concat(number_of_matched_candidates(infobox_candidate_sets,term,"INFOBOX"),[:genls?,:spec?,:isa?,:type?])
+              sum_counts(counts,%w{p c i t x})
               row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end

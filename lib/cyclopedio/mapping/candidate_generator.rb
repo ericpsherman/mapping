@@ -32,6 +32,7 @@ module Cyclopedio
         @article_cache = Ref::WeakValueMap.new
         @concept_types_cache = Ref::WeakValueMap.new
         @term_cache = Ref::WeakValueMap.new
+        @infobox_cache = Ref::WeakValueMap.new
       end
 
       # Returns the candidate terms for the Wikipedia +category+.
@@ -95,6 +96,14 @@ module Cyclopedio
       def term_candidates(cyc_id)
         return @term_cache[cyc_id] unless @term_cache[cyc_id].nil?
         @term_cache[cyc_id] = create_candidate_set("",[@name_service.find_by_id(cyc_id)])
+      end
+
+      # Returns a candidate set for the given +infobox+. The English name of the
+      # infobox is searched for in Cyc. Category filters are applied to the
+      # returned candidate set.
+      def infobox_candidates(infobox)
+        return @infobox_cache[infobox] unless @infobox_cache[infobox].nil?
+        @infobox_cache[infobox] = candidate_set_for_name(infobox,@category_filters)
       end
 
       private
