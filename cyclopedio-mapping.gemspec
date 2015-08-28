@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version = "0.1.0"
   s.date = "#{Time.now.strftime("%Y-%m-%d")}"
   s.required_ruby_version = '>= 2.0.0'
-  s.authors = ['Aleksander Smywiński-Pohl']
+  s.authors = ['Aleksander Smywiński-Pohl', 'Krzysztof Wróbel']
   s.email   = ["apohllo@o2.pl"]
   s.summary = "Mapping between Cyc and other schemas"
   s.description = "This gem is designed to faciliate mapping between the Cyc ontology and other classification schemas"
