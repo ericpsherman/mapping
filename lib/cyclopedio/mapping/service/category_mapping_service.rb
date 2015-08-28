@@ -44,7 +44,7 @@ module Cyclopedio
               counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?]))
               counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE",[:genls?,:spec?,:isa?,:type?]))
               counts.concat(number_of_matched_candidates(infobox_candidate_sets,term,"INFOBOX",[:genls?,:spec?,:isa?,:type?]))
-              positive,negative = sum_counts(counts,%w{p c i t x})
+              positive,negative = sum_counts(term,counts,%w{p c i t x})
               row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end
