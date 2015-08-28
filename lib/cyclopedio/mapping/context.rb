@@ -33,7 +33,7 @@ module Cyclopedio
       # at the category page. If +max_distance+ is not provided,
       # default distance defined for this context is used.
       def children(max_distance=@default_distance)
-        @children[0] = @entity if @children[0].nil?
+        @children[0] = [@entity] if @children[0].empty?
         add_relatives(@children,1,max_distance,:children)
         @children
       end
@@ -46,7 +46,7 @@ module Cyclopedio
           next if @articles.include?(distance)
           self.children(distance-1)[distance-1].each do |category|
             regular = category.articles.to_a
-            remote = @remote_context.relatives(category, :articles, Rlp::Wiki::Concept)
+            remote = @remote_context.relatives(category, :articles, Cyclopedio::Wiki::Article)
             @articles[distance].concat(regular + remote)
           end
         end
@@ -57,7 +57,7 @@ module Cyclopedio
       # Returns parents of the entity which has to be a Wikipedia category, up
       # to +max_distance+.
       def category_parents(max_distance)
-        @parents[0] = @entity if @parents[0].nil?
+        @parents[0] = [@entity] if @parents[0].empty?
         add_relatives(@parents,1,max_distance,:parents){|r| r.eponymous_articles.flat_map{|a| a.categories.to_a } }
         @parents
       end
@@ -72,7 +72,7 @@ module Cyclopedio
         # direct parents
         regular = @entity.categories.to_a
         eponymous = @entity.eponymous_categories.flat_map{|c| c.parents.to_a }
-        remote = @remote_context.relatives(@entity, :categories, Rlp::Wiki::Category)
+        remote = @remote_context.relatives(@entity, :categories, Cyclopedio::Wiki::Category)
         @parents[1] = (regular + eponymous + remote).select { |c| c.regular? && c.plural? }
 
         add_relatives(@parents,2,max_distance,:parents){|r| r.eponymous_articles.flat_map{|a| a.categories.to_a } }
@@ -86,7 +86,8 @@ module Cyclopedio
           next if relatives.include?(distance)
           relatives[distance-1].each do |relative|
             regular = relative.public_send(relationship).to_a
-            remote = @remote_context.relatives(relative, relationship, Rlp::Wiki::Category)
+            remote = @remote_context.relatives(relative, relationship, Cyclopedio::Wiki::Category)
+            auxiliary = []
             auxiliary = yield(relative) if block_given?
             relatives[distance].concat((regular + remote + auxiliary).select { |c| c.regular? && c.plural? })
           end

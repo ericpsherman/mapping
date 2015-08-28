@@ -53,10 +53,10 @@ module Cyclopedio
             candidates.each do |term|
               counts = []
               counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name,[:genls?]))
-              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?])
-              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?])
-              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE",[:genls?,:spec?,:isa?,:type?]])
-              sum_counts(counts,%w{p c i t})
+              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?]))
+              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?]))
+              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE",[:genls?,:spec?,:isa?,:type?]]))
+              positive,negative = sum_counts(term,counts,%w{p c i t})
               row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end
