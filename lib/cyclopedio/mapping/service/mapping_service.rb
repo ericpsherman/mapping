@@ -79,7 +79,7 @@ module Cyclopedio
         end
 
         def related_type_candidates(articles)
-	  # TODO implement fiel for 'predefined' article tyle.
+	  # TODO implement field for 'predefined' article type.
           [] || articles.select{|a| a.regular? && a.dbpedia_type }.map{|a| @candidate_generator.term_candidates(a.dbpedia_type.cyc_id) }
         end
 
@@ -103,10 +103,10 @@ module Cyclopedio
             if positive > 0
               labels = labels.map{|name| "#{name}:%i/%i" }.join(",")
               count_string = "  %-20s #{labels} -> %i/%i/%.1f" %
-                  [term.to_ruby, *counts, positive, positive+negative, (positive/(positive+negative).to_f*100)]
+                  [term.to_ruby, *counts, positive, positive+negative, (positive/(positive+negative).to_f*100)] #TODO term?
               reporter.call(count_string.hl(:green))
             else
-              reporter.call("  #{term.to_ruby}".hl(:red))
+              reporter.call("  #{term.to_ruby}".hl(:red)) #TODO term?
             end
           end
           return positive, negative

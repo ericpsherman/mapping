@@ -14,7 +14,7 @@ module Cyclopedio
       # * :converter_factory: - factory used to convert names to Cyc format
       #   (e.g. New York (City) -> NewYork-City).
       # * :methods: - selected methods: :exact, :label, :denotation. The order is
-      #   signitificant. [:exact, :denotation] by default.
+      #   significant. [:exact, :denotation] by default.
       # * :return_all: - if set to true returns the result of the all
       #   methods that succeeded (true by default)
       def initialize(options={})

@@ -14,13 +14,13 @@ module Cyclopedio
         # * :microtheory:
         # * :relation:
         def term_type(term)
-          if @cyc.isa?(term,:Collection)
+          if @cyc.isa?(term, :Collection)
             return :collection
-          elsif @cyc.isa?(term,:Microtheory)
+          elsif @cyc.isa?(term, :Microtheory)
             return :microtheory
-          elsif @cyc.isa?(term,:Relation)
+          elsif @cyc.isa?(term, :Relation)
             return :relation
-          elsif @cyc.isa?(term,:Individual)
+          elsif @cyc.isa?(term, :Individual)
             return :individual
           end
         end

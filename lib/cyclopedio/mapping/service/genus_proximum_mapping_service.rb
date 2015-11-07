@@ -13,7 +13,7 @@ module Cyclopedio
           report(article.name.hl(:blue))
           return result if candidate_set.empty?
           candidate_set.each do |name, candidates|
-            result.concat(["T",name])
+            result.concat(['T', name])
             puts name if @verbose
             name = name.downcase.singularize
             next if candidates.empty?
@@ -22,11 +22,11 @@ module Cyclopedio
             parentheses_candidates = [@candidate_generator.parentheses_candidates(article)]
             candidates.each do |term|
               counts = []
-              counts.concat(number_of_matched_candidates(parent_candidates,term,name,[:genls?,:spec?])
-              counts.concat(number_of_matched_candidates(type_candidates,term,"DBPEDIA_TYPE",[:genls?,:spec?])
-              counts.concat(number_of_matched_candidates(parentheses_candidates,term,parentheses_candidates.first.full_name,[:genls?,:spec?])
-              sum_counts(counts,%w{p t r})
-              result.concat([term.id,term.to_ruby.to_s,positive,positive+negative])
+              counts.concat(number_of_matched_candidates(parent_candidates, term, name, [:genls?, :spec?]))
+              counts.concat(number_of_matched_candidates(type_candidates, term, 'DBPEDIA_TYPE', [:genls?, :spec?]))
+              counts.concat(number_of_matched_candidates(parentheses_candidates, term, parentheses_candidates.first.full_name, [:genls?, :spec?]))
+              positive, negative = sum_counts(counts, %w{p t r})
+              result.concat([term.id, term.to_ruby.to_s, positive, positive+negative])
             end
           end
           result

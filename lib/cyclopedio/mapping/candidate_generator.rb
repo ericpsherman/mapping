@@ -56,7 +56,7 @@ module Cyclopedio
       # Return the candidate terms for a given +pattern+ which is exemplified
       # by the +representative+. The result is a CandidateSet.
       def pattern_candidates(pattern,representative)
-        candidate_set_for_syntax_trees(representative_head_trees(representative),@category_filters,pattern)
+        candidate_set_for_syntax_trees(representative_head_trees(representative),@category_filters,pattern) #TODO representative_head_trees?
       end
 
       # Returns the candidate terms for the Wikipedia +article+.
@@ -144,7 +144,7 @@ module Cyclopedio
           if pattern
             names.select! do |name|
               # Pattern won't match too specific name, e.g.
-              # "X almumni" does not match /University alumni/
+              # "X alumni" does not match /University alumni/
               pattern =~ /#{name}/
             end
           end

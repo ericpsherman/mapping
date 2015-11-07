@@ -14,10 +14,10 @@ module Cyclopedio
 
         # Returns the most specific generalization of term1 and term2.
         def merge(*terms)
-          result = @cyc.mapcar(->(){ "#'col-with-count" }){|cyc| cyc.min_ceiling_cols ->() { "'(#{terms.map(&:to_cyc).join(" ")})" }}
+          result = @cyc.mapcar(->() { "#'col-with-count" }) { |cyc| cyc.min_ceiling_cols ->() { "'(#{terms.map(&:to_cyc).join(" ")})" } }
           return [] unless result
-          count = result.min{|(c1,_),(c2,_)| c2 <=> c1 }[0]
-          result.select{|c,t| c == count }.map(&:last)
+          count = result.min { |(c1, _), (c2, _)| c2 <=> c1 }[0]
+          result.select { |c, t| c == count }.map(&:last)
         end
       end
     end
