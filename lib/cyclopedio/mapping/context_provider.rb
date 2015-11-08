@@ -43,7 +43,7 @@ module Cyclopedio
 
       private
       def translated_proxies(page,finder_name)
-        @rlp_services.map do |language,service|
+        @remote_services.map do |language,service|
           translation = translation(page,language)
           next if translation.nil?
           Concurrent::Future.execute(executor: @pool) do
