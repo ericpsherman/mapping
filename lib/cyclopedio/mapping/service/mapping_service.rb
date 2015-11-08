@@ -96,17 +96,17 @@ module Cyclopedio
         end
 
         #Counts positive and negative signals.
-        def sum_counts(counts,labels)
+        def sum_counts(counts,labels, term)
           positive = counts.map.with_index { |e, i| e if i % 2 == 0 }.compact.inject(0) { |e, s| e + s }
           negative = counts.map.with_index { |e, i| e if i % 2 != 0 }.compact.inject(0) { |e, s| e + s }
           report do |reporter|
             if positive > 0
               labels = labels.map{|name| "#{name}:%i/%i" }.join(",")
               count_string = "  %-20s #{labels} -> %i/%i/%.1f" %
-                  [term.to_ruby, *counts, positive, positive+negative, (positive/(positive+negative).to_f*100)] #TODO term?
+                  [term.to_ruby, *counts, positive, positive+negative, (positive/(positive+negative).to_f*100)]
               reporter.call(count_string.hl(:green))
             else
-              reporter.call("  #{term.to_ruby}".hl(:red)) #TODO term?
+              reporter.call("  #{term.to_ruby}".hl(:red))
             end
           end
           return positive, negative
