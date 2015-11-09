@@ -16,7 +16,7 @@ module Cyclopedio
       # Returns the parent categories of the entity. These are categories listed
       # at the end of the page in Wikipedia. If +max_distance+ is not provided,
       # default distance defined for this context is used. If the page is
-      # emponymous, also the categories of the eponymous counterpart are
+      # eponymous, also the categories of the eponymous counterpart are
       # returned.
       def parents(max_distance=@default_distance)
         case @entity

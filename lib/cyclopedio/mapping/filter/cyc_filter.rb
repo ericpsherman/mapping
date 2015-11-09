@@ -26,7 +26,7 @@ module Cyclopedio
         end
 
         protected
-        # Assing allowed values of the filtered feature.
+        # Assign allowed values of the filtered feature.
         def assign_allowed(name,default,allowed_values)
           @allowed = @options.fetch(:allowed,default)
           @allowed.select!{|p| allowed_values.include?(p) } unless @allowed == :all

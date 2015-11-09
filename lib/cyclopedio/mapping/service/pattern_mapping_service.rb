@@ -38,9 +38,9 @@ module Cyclopedio
             parents = Set.new
             children = Set.new
             articles = Set.new
-            context = @context_provider.context(category)
             category_ids.sample(@sample_size).each do |category_wiki_id|
               category = Category.find_by_wiki_id(category_wiki_id)
+              context = @context_provider.context(category)
               parents.merge(context.parents.values.flatten(1))
               children.merge(context.children.values.flatten(1))
               articles.merge(context.articles.values.flatten(1))

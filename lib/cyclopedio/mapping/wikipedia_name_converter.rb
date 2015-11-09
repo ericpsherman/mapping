@@ -11,16 +11,16 @@ module Cyclopedio
       # Converts the Wikipedia category name to Cyc-like name.
       def to_cyc(options={})
         head, qualifier = @name.split("(")
-        head = capitalize_and_sqeeze_words(head)
+        head = capitalize_and_squeeze_words(head)
         if qualifier && !options[:skip_qualifier]
-          "#{head}-" + capitalize_and_sqeeze_words(qualifier.sub(")",""))
+          "#{head}-" + capitalize_and_squeeze_words(qualifier.sub(")",""))
         else
           head
         end
       end
 
       private
-      def capitalize_and_sqeeze_words(words)
+      def capitalize_and_squeeze_words(words)
         words.gsub("-"," ").split(" ").map do |segment|
           if segment =~ /\p{Lu}/
             segment
