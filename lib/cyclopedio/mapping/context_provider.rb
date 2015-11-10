@@ -65,7 +65,7 @@ module Cyclopedio
       end
 
       def finder_name(page)
-        page.class.to_s.gsub("::","_").downcase.pluralize
+        page.class.to_s.gsub("::","_").downcase.pluralize.sub("cyclopedio","rlp")
       end
     end
   end

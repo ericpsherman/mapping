@@ -71,16 +71,22 @@ module Cyclopedio
 
         def related_category_candidates(categories)
           categories.select{|c| c.regular? && c.plural?}.map{|c| @candidate_generator.category_candidates(c) }.
-            reject{|candidate_set| candidate_set.empty? }
+            reject{|cs| cs.empty? }
         end
 
         def related_article_candidates(articles)
-          articles.select{|a| a.regular? }.map{|a| @candidate_generator.article_candidates(a) }.reject{|candidate_set| candidate_set.empty? }
+          articles.select{|a| a.regular? }.map{|a| @candidate_generator.article_candidates(a) }.reject{|cs| cs.empty? }
         end
 
         def related_type_candidates(articles)
-	  # TODO implement field for 'predefined' article type.
-          [] || articles.select{|a| a.regular? && a.dbpedia_type }.map{|a| @candidate_generator.term_candidates(a.dbpedia_type.cyc_id) }
+	  # TODO implement field for 'predefined' article tyle.
+          # articles.select{|a| a.regular? && a.dbpedia_type }.map{|a| @candidate_generator.term_candidates(a.dbpedia_type.cyc_id) }
+          []
+        end
+
+        def related_infobox_candidates(articles)
+          articles.select{|a| a.regular? && a.infoboxes }.flat_map{|a| a.infoboxes.map{|x| @candidate_generator.infobox_candidates(x) } }.
+            reject{|cs| cs.empty? }
         end
 
         def number_of_matched_candidates(candidate_sets_for_related_terms,term,entity_name,relations)
@@ -96,7 +102,7 @@ module Cyclopedio
         end
 
         #Counts positive and negative signals.
-        def sum_counts(counts,labels, term)
+        def sum_counts(term,counts,labels)
           positive = counts.map.with_index { |e, i| e if i % 2 == 0 }.compact.inject(0) { |e, s| e + s }
           negative = counts.map.with_index { |e, i| e if i % 2 != 0 }.compact.inject(0) { |e, s| e + s }
           report do |reporter|

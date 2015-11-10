@@ -87,12 +87,8 @@ module Cyclopedio
           relatives[distance-1].each do |relative|
             regular = relative.public_send(relationship).to_a
             remote = @remote_context.relatives(relative, relationship, Cyclopedio::Wiki::Category)
-            if block_given?
-              auxiliary = yield(relative).compact
-            else
-              auxiliary = []
-            end
-            #p 'regular', regular, 'remote', remote, 'aux', auxiliary
+            auxiliary = []
+            auxiliary = yield(relative) if block_given?
             relatives[distance].concat((regular + remote + auxiliary).select { |c| c.regular? && c.plural? })
           end
         end

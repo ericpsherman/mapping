@@ -24,7 +24,7 @@ module Cyclopedio
         @article_filters = options[:article_filters] || []
         @genus_filters = options[:genus_filters] || []
 
-        @nouns = options[:nouns] || Wiktionary::Noun.new
+        @nouns = options[:nouns]
         @all_subtrees = options.fetch(:all_subtrees,false)
         @category_exact_match = options.fetch(:category_exact_match,false)
 
@@ -32,6 +32,7 @@ module Cyclopedio
         @article_cache = Ref::WeakValueMap.new
         @concept_types_cache = Ref::WeakValueMap.new
         @term_cache = Ref::WeakValueMap.new
+        @infobox_cache = Ref::WeakValueMap.new
       end
 
       # Returns the candidate terms for the Wikipedia +category+.
@@ -95,6 +96,14 @@ module Cyclopedio
       def term_candidates(cyc_id)
         return @term_cache[cyc_id] unless @term_cache[cyc_id].nil?
         @term_cache[cyc_id] = create_candidate_set("",[@name_service.find_by_id(cyc_id)])
+      end
+
+      # Returns a candidate set for the given +infobox+. The English name of the
+      # infobox is searched for in Cyc. Category filters are applied to the
+      # returned candidate set.
+      def infobox_candidates(infobox)
+        return @infobox_cache[infobox] unless @infobox_cache[infobox].nil?
+        @infobox_cache[infobox] = candidate_set_for_name(infobox,@category_filters)
       end
 
       private
@@ -178,11 +187,15 @@ module Cyclopedio
       # Singularize using Wiktionary data. The result is an array of Strings.
       def singularize_name(name, head)
         names = []
-        singularized_heads = @nouns.singularize(head)
-        if singularized_heads
-          singularized_heads.each do |singularized_head|
-            names << name.sub(/\b#{Regexp.quote(head)}\b/, singularized_head)
+        if @nouns
+          singularized_heads = @nouns.singularize(head)
+          if singularized_heads
+            singularized_heads.each do |singularized_head|
+              names << name.sub(/\b#{Regexp.quote(head)}\b/, singularized_head)
+            end
           end
+        #elsif name.respond_to?(:singularize)
+        #  names << name.singularize
         end
         names << name if names.empty?
         names

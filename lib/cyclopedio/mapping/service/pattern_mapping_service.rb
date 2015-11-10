@@ -15,7 +15,7 @@ module Cyclopedio
           @sample_size = options[:sample_size]
         end
 
-        def candidates_for_pattern(pattern, head, category_ids, support)
+        def candidates_for_pattern(pattern,head,category_ids,support)
           representative_id = category_ids.find do |category_wiki_id|
             category = Category.find_by_wiki_id(category_wiki_id)
             next unless category.plural? && category.regular?
@@ -23,8 +23,8 @@ module Cyclopedio
           end
           return [] if representative_id.nil?
           representative = Category.find_by_wiki_id(representative_id)
-          candidate_set = @candidate_generator.pattern_candidates(pattern, representative)
-          row = [pattern, candidate_set.full_name, support]
+          candidate_set = @candidate_generator.pattern_candidates(pattern,representative)
+          row = [pattern,candidate_set.full_name,support]
           report(pattern.hl(:blue))
           if candidate_set.size > 1
             report(candidate_set.all_candidates.to_s.hl(:purple))
@@ -52,12 +52,12 @@ module Cyclopedio
             # matched relations computation
             candidates.each do |term|
               counts = []
-              counts.concat(number_of_matched_candidates(parent_candidate_sets, term, candidate_set.full_name, [:genls?]))
-              counts.concat(number_of_matched_candidates(child_candidate_sets, term, candidate_set.full_name, [:spec?]))
-              counts.concat(number_of_matched_candidates(instance_candidate_sets, term, candidate_set.full_name, [:type?]))
-              counts.concat(number_of_matched_candidates(type_candidate_sets, term, 'DBPEDIA_TYPE', [:genls?, :spec?, :isa?, :type?]))
-              positive, negative = sum_counts(counts, %w{p c i t}, term)
-              row.concat([term.id, term.to_ruby, positive, positive+negative])
+              counts.concat(number_of_matched_candidates(parent_candidate_sets,term,candidate_set.full_name,[:genls?]))
+              counts.concat(number_of_matched_candidates(child_candidate_sets,term,candidate_set.full_name,[:spec?]))
+              counts.concat(number_of_matched_candidates(instance_candidate_sets,term,candidate_set.full_name,[:type?]))
+              counts.concat(number_of_matched_candidates(type_candidate_sets,term,"DBPEDIA_TYPE",[:genls?,:spec?,:isa?,:type?]))
+              positive,negative = sum_counts(term,counts,%w{p c i t})
+              row.concat([term.id,term.to_ruby,positive,positive+negative])
             end
           end
           row
