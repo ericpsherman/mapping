@@ -5,7 +5,6 @@ require 'wiktionary/noun'
 require_relative 'name_mapper'
 require_relative 'candidate_set'
 
-
 module Cyclopedio
   module Mapping
     # This class is used to generate candidate Cyc terms for a given Wikipedia
@@ -18,23 +17,22 @@ module Cyclopedio
         @cyc = options[:cyc] || Cyc::Client.new(cache: true)
         @name_mapper = options[:name_mapper] || NameMapper.new(cyc: @cyc, name_service: @name_service)
         @simplifier_factory = options[:simplifier_factory] || Cyclopedio::Syntax::Stanford::Simplifier
+        @parse_tree_factory = options[:parse_tree_factory] || Cyclopedio::Syntax::Stanford::Converter
         @candidate_set_factory = options[:candidate_set_factory] || CandidateSet
 
         @category_filters = options[:category_filters] || []
         @article_filters = options[:article_filters] || []
         @genus_filters = options[:genus_filters] || []
 
+        @nouns = options[:nouns] || Wiktionary::Noun.new
         @all_subtrees = options.fetch(:all_subtrees,false)
         @category_exact_match = options.fetch(:category_exact_match,false)
-
-        #@wikipedia_category_utils = options[:wikipedia_category_utils] || WikipediaCategoryUtils.new
-        @parse_tree_factory = options[:parse_tree_factory] || Cyclopedio::Syntax::Stanford::Converter
-        @nouns = options[:nouns] || Wiktionary::Noun.new
 
         @category_cache = Ref::WeakValueMap.new
         @article_cache = Ref::WeakValueMap.new
         @concept_types_cache = Ref::WeakValueMap.new
         @term_cache = Ref::WeakValueMap.new
+        @infobox_cache = Ref::WeakValueMap.new
       end
 
       # Returns the candidate terms for the Wikipedia +category+.
@@ -50,7 +48,7 @@ module Cyclopedio
         candidate_set = create_candidate_set(category.name,candidates)
         return @category_cache[category] = candidate_set if !candidate_set.empty? || @category_exact_match
         # from simplified name
-        candidate_set = candidate_set_for_syntax_trees(@decorated_category.category_head_trees,@category_filters)
+        candidate_set = candidate_set_for_syntax_trees(decorated_category.category_head_trees,@category_filters)
         return @category_cache[category] = candidate_set unless candidate_set.empty?
         # from original whole name
         candidate_set = candidate_set_for_name(category.name, @category_filters)
@@ -101,10 +99,15 @@ module Cyclopedio
         @term_cache[cyc_id] = create_candidate_set("",[@name_service.find_by_id(cyc_id)])
       end
 
+      # Returns a candidate set for the given +infobox+. The English name of the
+      # infobox is searched for in Cyc. Category filters are applied to the
+      # returned candidate set.
+      def infobox_candidates(infobox)
+        return @infobox_cache[infobox] unless @infobox_cache[infobox].nil?
+        @infobox_cache[infobox] = candidate_set_for_name(infobox,@category_filters)
+      end
+
       private
-      # XXX most of these methods should be moved to external class(es).
-
-
       # Return candidate set for an entity +name+, with a given +head+ and apply
       # provided +filters+.
       def candidate_set_for_name(name,filters)
