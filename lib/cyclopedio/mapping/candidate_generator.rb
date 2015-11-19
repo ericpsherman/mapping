@@ -24,7 +24,7 @@ module Cyclopedio
         @article_filters = options[:article_filters] || []
         @genus_filters = options[:genus_filters] || []
 
-        @nouns = options[:nouns]
+        @nouns = options[:nouns] || Wiktionary::Noun.new
         @all_subtrees = options.fetch(:all_subtrees,false)
         @category_exact_match = options.fetch(:category_exact_match,false)
 
@@ -41,13 +41,14 @@ module Cyclopedio
         return @category_cache[category] unless @category_cache[category].nil?
         # from whole name singularized
         candidates = []
-        singularize_name(category.name, category_head(category)).each do |name_singularized|
+        decorated_category = Cyclopedio::Syntax::NameDecorator.new(category, parse_tree_factory: @parse_tree_factory)
+        @nouns.singularize_name(category.name, decorated_category.category_head).each do |name_singularized|
           candidates.concat(candidates_for_name(name_singularized,@category_filters))
         end
         candidate_set = create_candidate_set(category.name,candidates)
         return @category_cache[category] = candidate_set if !candidate_set.empty? || @category_exact_match
         # from simplified name
-        candidate_set = candidate_set_for_syntax_trees(category_head_trees(category),@category_filters)
+        candidate_set = candidate_set_for_syntax_trees(decorated_category.category_head_trees,@category_filters)
         return @category_cache[category] = candidate_set unless candidate_set.empty?
         # from original whole name
         candidate_set = candidate_set_for_name(category.name, @category_filters)
@@ -66,7 +67,7 @@ module Cyclopedio
         return @article_cache[article] unless @article_cache[article].nil?
         candidate_set = candidate_set_for_name(article.name, @article_filters)
         if candidate_set.empty?
-          candidate_set = candidate_set_for_name(remove_parentheses(article.name), @article_filters)
+          candidate_set = candidate_set_for_name(Cyclopedio::Syntax::NameDecorator.new(article, parse_tree_factory: @parse_tree_factory).remove_parentheses, @article_filters)
         end
         @article_cache[article] = candidate_set
       end
@@ -83,7 +84,7 @@ module Cyclopedio
       # The result is a CandidateSet.
       def parentheses_candidates(concept)
         # TODO cache result for a given type
-        type = type_in_parentheses(concept.name)
+        type = Cyclopedio::Syntax::NameDecorator.new(concept, parse_tree_factory: @parse_tree_factory).type_in_parentheses
         candidate_set = create_candidate_set(type,[])
         if !type.empty?
           candidate_set = candidate_set_for_name(type, @genus_filters)
@@ -107,35 +108,6 @@ module Cyclopedio
       end
 
       private
-      # XXX most of these methods should be moved to external class(es).
-
-      # Returns the first parse tree of the +category+ name.
-      def category_head_tree(category)
-        convert_head_into_object(category.parsed_head)
-      end
-
-      # Returns the word (string) being a head of the +category+ name.
-      def category_head(category)
-        head_node = category_head_tree(category).find_head_noun
-        head_node && head_node.content
-      end
-
-      # Returns a list of parse trees of the +category+ name.
-      # The might be more parse trees for categories such as "Cities and
-      # villages in X", etc.
-      def category_head_trees(category)
-        if category.multiple_heads?
-          category.parsed_heads.map{|h| convert_head_into_object(h) }
-        else
-          [category_head_tree(category)]
-        end
-      end
-
-      # Converts the string representing the parsed +head+ into tree of objects.
-      def convert_head_into_object(head)
-        @parse_tree_factory.new(head).object_tree
-      end
-
       # Return candidate set for an entity +name+, with a given +head+ and apply
       # provided +filters+.
       def candidate_set_for_name(name,filters)
@@ -161,7 +133,7 @@ module Cyclopedio
           next unless head_node
           head = head_node.content
           names.each do |name|
-            simplified_names = singularize_name(name, head)
+            simplified_names = @nouns.singularize_name(name, head)
             candidates = []
             simplified_names.each do |simplified_name|
               candidates.concat(candidates_for_name(simplified_name, filters))
@@ -182,33 +154,6 @@ module Cyclopedio
         filters.inject(candidates) do |terms, filter|
           filter.apply(terms)
         end
-      end
-
-      # Singularize using Wiktionary data. The result is an array of Strings.
-      def singularize_name(name, head)
-        names = []
-        if @nouns
-          singularized_heads = @nouns.singularize(head)
-          if singularized_heads
-            singularized_heads.each do |singularized_head|
-              names << name.sub(/\b#{Regexp.quote(head)}\b/, singularized_head)
-            end
-          end
-        #elsif name.respond_to?(:singularize)
-        #  names << name.singularize
-        end
-        names << name if names.empty?
-        names
-      end
-
-      def remove_parentheses(name)
-        return name if name !~ /\(/ || name =~ /^\(/
-        name.sub(/\([^)]*\)/,"").strip
-      end
-
-      def type_in_parentheses(name)
-        type = name[/\([^)]*\)/]
-        type ? type[1..-2] : ""
       end
 
       # Create a candidate set for single group of candidates.
